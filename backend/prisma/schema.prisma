@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//USUARIOS Y AUTH 
+
+model Usuario {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  password      String
+  nombre        String
+  apellido      String
+  rol           Rol       @default(OPERADOR)
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("usuarios")
+}
+
+enum Rol {
+  ADMIN
+  OPERADOR
+  LECTOR
+}
+
+//CLIENTES 
+
+model Cliente {
+  id            Int       @id @default(autoincrement())
+  dniRuc        String    @unique
+  tipoDocumento TipoDocumento @default(DNI)
+  nombres       String
+  apellidos     String
+  telefono      String?
+  email         String?
+  direccion     String?
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  predios       Predio[]
+  facturas      Factura[]
+
+  @@map("clientes")
+}
+
+enum TipoDocumento {
+  DNI
+  RUC
+  CE
+}
+
+//PREDIOS 
+model Predio {
+  id            Int       @id @default(autoincrement())
+  clienteId     Int
+  cliente       Cliente   @relation(fields: [clienteId], references: [id])
+  direccion     String
+  referencia    String?
+  tipoUso       TipoUso   @default(DOMESTICO)
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  medidor       Medidor?
+
+  @@map("predios")
+}
+
+enum TipoUso {
+  DOMESTICO
+  COMERCIAL
+  INDUSTRIAL
+  ESTATAL
+}
+
+//MEDIDORES 
+
+model Medidor {
+  id                  Int       @id @default(autoincrement())
+  predioId            Int       @unique
+  predio              Predio    @relation(fields: [predioId], references: [id])
+  numeroSerie         String    @unique
+  marca               String?
+  lecturaInstalacion  Int       @default(0)
+  fechaInstalacion    DateTime  @default(now())
+  estado              EstadoMedidor @default(ACTIVO)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  lecturas            Lectura[]
+
+  @@map("medidores")
+}
+
+enum EstadoMedidor {
+  ACTIVO
+  INACTIVO
+  DANADO
+  RETIRADO
+}
+
+//LECTURAS 
+
+model Lectura {
+  id                Int       @id @default(autoincrement())
+  medidorId         Int
+  medidor           Medidor   @relation(fields: [medidorId], references: [id])
+  lecturaAnterior   Int
+  lecturaActual     Int
+  consumoM3         Int
+  periodo           DateTime
+  fechaLectura      DateTime  @default(now())
+  observaciones     String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  factura           Factura?
+
+  @@unique([medidorId, periodo])
+  @@map("lecturas")
+}
+
+//TARIFAS 
+
+model Tarifa {
+  id            Int       @id @default(autoincrement())
+  tipoUso       TipoUso
+  rangoMinM3    Int
+  rangoMaxM3    Int?
+  precioM3      Decimal   @db.Decimal(10, 2)
+  cargoFijo     Decimal   @db.Decimal(10, 2) @default(0)
+  activo        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("tarifas")
+}
+
+//FACTURAS 
+
+model Factura {
+  id                Int       @id @default(autoincrement())
+  numero            String    @unique
+  clienteId         Int
+  cliente           Cliente   @relation(fields: [clienteId], references: [id])
+  lecturaId         Int       @unique
+  lectura           Lectura   @relation(fields: [lecturaId], references: [id])
+  periodo           DateTime
+  consumoM3         Int
+  montoConsumo      Decimal   @db.Decimal(10, 2)
+  cargoFijo         Decimal   @db.Decimal(10, 2)
+  subtotal          Decimal   @db.Decimal(10, 2)
+  igv               Decimal   @db.Decimal(10, 2)
+  total             Decimal   @db.Decimal(10, 2)
+  fechaEmision      DateTime  @default(now())
+  fechaVencimiento  DateTime
+  estado            EstadoFactura @default(PENDIENTE)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  pagos             Pago[]
+
+  @@map("facturas")
+}
+
+enum EstadoFactura {
+  PENDIENTE
+  PAGADA
+  VENCIDA
+  ANULADA
+}
+
+//PAGOS 
+
+model Pago {
+  id            Int       @id @default(autoincrement())
+  facturaId     Int
+  factura       Factura   @relation(fields: [facturaId], references: [id])
+  monto         Decimal   @db.Decimal(10, 2)
+  fechaPago     DateTime  @default(now())
+  metodoPago    MetodoPago @default(EFECTIVO)
+  comprobante   String?
+  observaciones String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("pagos")
+}
+
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  YAPE
+  PLIN
+  TARJETA
+}
