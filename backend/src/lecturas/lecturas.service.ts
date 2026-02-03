@@ -5,13 +5,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLecturaDto } from './dto/lectura.dto';
+import { Prisma, Lectura } from '@prisma/client';
 
 @Injectable()
 export class LecturasService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(periodo?: string) {
-    const where = periodo ? { periodo: new Date(periodo) } : {};
+    const where: Prisma.LecturaWhereInput = periodo
+      ? { periodo: new Date(periodo) }
+      : {};
 
     return this.prisma.lectura.findMany({
       where,
@@ -74,7 +77,7 @@ export class LecturasService {
 
     // Obtener lectura anterior
     const lecturaAnterior =
-      medidor.lecturas[0]?.lecturaActual || medidor.lecturaInstalacion;
+      medidor.lecturas[0]?.lecturaActual ?? medidor.lecturaInstalacion;
 
     // Validar que la lectura actual sea mayor a la anterior
     if (dto.lecturaActual < lecturaAnterior) {
@@ -124,7 +127,7 @@ export class LecturasService {
     });
   }
 
-  async findByMedidor(medidorId: number) {
+  async findByMedidor(medidorId: number): Promise<Lectura[]> {
     return this.prisma.lectura.findMany({
       where: { medidorId },
       orderBy: { periodo: 'desc' },

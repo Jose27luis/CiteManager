@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMedidorDto, UpdateMedidorDto } from './dto/medidor.dto';
+import { Medidor } from '@prisma/client';
 
 @Injectable()
 export class MedidoresService {
@@ -67,20 +68,23 @@ export class MedidoresService {
       throw new ConflictException(`El predio ya tiene un medidor asignado`);
     }
 
-    // Verificar número de serie único
+    // Verificar numero de serie unico
     const serieExists = await this.prisma.medidor.findUnique({
       where: { numeroSerie: dto.numeroSerie },
     });
 
     if (serieExists) {
       throw new ConflictException(
-        `El número de serie ${dto.numeroSerie} ya existe`,
+        `El numero de serie ${dto.numeroSerie} ya existe`,
       );
     }
 
     return this.prisma.medidor.create({
       data: {
-        ...dto,
+        predioId: dto.predioId,
+        numeroSerie: dto.numeroSerie,
+        marca: dto.marca,
+        lecturaInstalacion: dto.lecturaInstalacion,
         fechaInstalacion: dto.fechaInstalacion
           ? new Date(dto.fechaInstalacion)
           : undefined,
@@ -95,7 +99,7 @@ export class MedidoresService {
     });
   }
 
-  async update(id: number, dto: UpdateMedidorDto) {
+  async update(id: number, dto: UpdateMedidorDto): Promise<Medidor> {
     await this.findOne(id);
 
     if (dto.numeroSerie) {
@@ -108,14 +112,18 @@ export class MedidoresService {
 
       if (exists) {
         throw new ConflictException(
-          `El número de serie ${dto.numeroSerie} ya existe`,
+          `El numero de serie ${dto.numeroSerie} ya existe`,
         );
       }
     }
 
     return this.prisma.medidor.update({
       where: { id },
-      data: dto,
+      data: {
+        numeroSerie: dto.numeroSerie,
+        marca: dto.marca,
+        estado: dto.estado,
+      },
     });
   }
 
@@ -132,9 +140,9 @@ export class MedidoresService {
         id: medidor.id,
         numeroSerie: medidor.numeroSerie,
       },
-      ultimaLectura: ultimaLectura?.lecturaActual || medidor.lecturaInstalacion,
+      ultimaLectura: ultimaLectura?.lecturaActual ?? medidor.lecturaInstalacion,
       fechaUltimaLectura:
-        ultimaLectura?.fechaLectura || medidor.fechaInstalacion,
+        ultimaLectura?.fechaLectura ?? medidor.fechaInstalacion,
     };
   }
 }

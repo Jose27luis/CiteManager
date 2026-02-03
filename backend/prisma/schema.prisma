@@ -10,7 +10,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//USUARIOS Y AUTH 
+// ==================== USUARIOS Y AUTH ====================
 
 model Usuario {
   id            Int       @id @default(autoincrement())
@@ -23,6 +23,8 @@ model Usuario {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  @@index([email])
+  @@index([activo])
   @@map("usuarios")
 }
 
@@ -32,7 +34,7 @@ enum Rol {
   LECTOR
 }
 
-//CLIENTES 
+// ==================== CLIENTES ====================
 
 model Cliente {
   id            Int       @id @default(autoincrement())
@@ -50,6 +52,9 @@ model Cliente {
   predios       Predio[]
   facturas      Factura[]
 
+  @@index([nombres, apellidos])
+  @@index([activo])
+  @@index([createdAt])
   @@map("clientes")
 }
 
@@ -59,7 +64,8 @@ enum TipoDocumento {
   CE
 }
 
-//PREDIOS 
+// ==================== PREDIOS ====================
+
 model Predio {
   id            Int       @id @default(autoincrement())
   clienteId     Int
@@ -73,6 +79,9 @@ model Predio {
 
   medidor       Medidor?
 
+  @@index([clienteId])
+  @@index([tipoUso])
+  @@index([activo])
   @@map("predios")
 }
 
@@ -83,7 +92,7 @@ enum TipoUso {
   ESTATAL
 }
 
-//MEDIDORES 
+// ==================== MEDIDORES ====================
 
 model Medidor {
   id                  Int       @id @default(autoincrement())
@@ -99,6 +108,8 @@ model Medidor {
 
   lecturas            Lectura[]
 
+  @@index([estado])
+  @@index([fechaInstalacion])
   @@map("medidores")
 }
 
@@ -109,7 +120,7 @@ enum EstadoMedidor {
   RETIRADO
 }
 
-//LECTURAS 
+// ==================== LECTURAS ====================
 
 model Lectura {
   id                Int       @id @default(autoincrement())
@@ -127,10 +138,13 @@ model Lectura {
   factura           Factura?
 
   @@unique([medidorId, periodo])
+  @@index([medidorId])
+  @@index([periodo])
+  @@index([fechaLectura])
   @@map("lecturas")
 }
 
-//TARIFAS 
+// ==================== TARIFAS ====================
 
 model Tarifa {
   id            Int       @id @default(autoincrement())
@@ -143,10 +157,12 @@ model Tarifa {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  @@index([tipoUso])
+  @@index([activo])
   @@map("tarifas")
 }
 
-//FACTURAS 
+// ==================== FACTURAS ====================
 
 model Factura {
   id                Int       @id @default(autoincrement())
@@ -170,6 +186,11 @@ model Factura {
 
   pagos             Pago[]
 
+  @@index([clienteId])
+  @@index([estado])
+  @@index([periodo])
+  @@index([fechaEmision])
+  @@index([fechaVencimiento])
   @@map("facturas")
 }
 
@@ -180,7 +201,7 @@ enum EstadoFactura {
   ANULADA
 }
 
-//PAGOS 
+// ==================== PAGOS ====================
 
 model Pago {
   id            Int       @id @default(autoincrement())
@@ -194,6 +215,9 @@ model Pago {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  @@index([facturaId])
+  @@index([fechaPago])
+  @@index([metodoPago])
   @@map("pagos")
 }
 

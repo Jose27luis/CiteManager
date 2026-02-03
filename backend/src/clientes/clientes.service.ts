@@ -5,17 +5,18 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateClienteDto, UpdateClienteDto } from './dto/cliente.dto';
+import { Prisma, Cliente, Factura } from '@prisma/client';
 
 @Injectable()
 export class ClientesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(search?: string) {
-    const where = search
+  async findAll(search?: string): Promise<Cliente[]> {
+    const where: Prisma.ClienteWhereInput = search
       ? {
           OR: [
-            { nombres: { contains: search, mode: 'insensitive' as const } },
-            { apellidos: { contains: search, mode: 'insensitive' as const } },
+            { nombres: { contains: search, mode: 'insensitive' } },
+            { apellidos: { contains: search, mode: 'insensitive' } },
             { dniRuc: { contains: search } },
           ],
         }
@@ -67,7 +68,7 @@ export class ClientesService {
     return cliente;
   }
 
-  async create(dto: CreateClienteDto) {
+  async create(dto: CreateClienteDto): Promise<Cliente> {
     const exists = await this.prisma.cliente.findUnique({
       where: { dniRuc: dto.dniRuc },
     });
@@ -79,11 +80,11 @@ export class ClientesService {
     }
 
     return this.prisma.cliente.create({
-      data: dto,
+      data: dto as Prisma.ClienteCreateInput,
     });
   }
 
-  async update(id: number, dto: UpdateClienteDto) {
+  async update(id: number, dto: UpdateClienteDto): Promise<Cliente> {
     await this.findOne(id);
 
     if (dto.dniRuc) {
@@ -103,11 +104,11 @@ export class ClientesService {
 
     return this.prisma.cliente.update({
       where: { id },
-      data: dto,
+      data: dto as Prisma.ClienteUpdateInput,
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<Cliente> {
     await this.findOne(id);
 
     return this.prisma.cliente.update({
@@ -119,7 +120,7 @@ export class ClientesService {
   async getEstadoCuenta(id: number) {
     const cliente = await this.findOne(id);
 
-    const facturasPendientes = await this.prisma.factura.findMany({
+    const facturasPendientes: Factura[] = await this.prisma.factura.findMany({
       where: {
         clienteId: id,
         estado: { in: ['PENDIENTE', 'VENCIDA'] },

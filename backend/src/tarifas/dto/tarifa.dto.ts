@@ -41,6 +41,14 @@ export class CreateTarifaDto {
 }
 
 export class UpdateTarifaDto {
+  @ApiPropertyOptional({
+    example: 'DOMESTICO',
+    enum: ['DOMESTICO', 'COMERCIAL', 'INDUSTRIAL', 'ESTATAL'],
+  })
+  @IsOptional()
+  @IsEnum(['DOMESTICO', 'COMERCIAL', 'INDUSTRIAL', 'ESTATAL'])
+  tipoUso?: string;
+
   @ApiPropertyOptional({ example: 0 })
   @IsOptional()
   @IsInt()

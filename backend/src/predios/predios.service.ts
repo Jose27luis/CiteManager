@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePredioDto, UpdatePredioDto } from './dto/predio.dto';
-import { TipoUso } from '@prisma/client';
+import { TipoUso, Predio, Prisma } from '@prisma/client';
 
 @Injectable()
 export class PrediosService {
@@ -74,19 +74,22 @@ export class PrediosService {
     });
   }
 
-  async update(id: number, dto: UpdatePredioDto) {
+  async update(id: number, dto: UpdatePredioDto): Promise<Predio> {
     await this.findOne(id);
+
+    const updateData: Prisma.PredioUpdateInput = {};
+    if (dto.direccion !== undefined) updateData.direccion = dto.direccion;
+    if (dto.referencia !== undefined) updateData.referencia = dto.referencia;
+    if (dto.tipoUso !== undefined) updateData.tipoUso = dto.tipoUso as TipoUso;
+    if (dto.activo !== undefined) updateData.activo = dto.activo;
 
     return this.prisma.predio.update({
       where: { id },
-      data: {
-        ...dto,
-        tipoUso: dto.tipoUso ? (dto.tipoUso as TipoUso) : undefined,
-      },
+      data: updateData,
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<Predio> {
     await this.findOne(id);
 
     return this.prisma.predio.update({
